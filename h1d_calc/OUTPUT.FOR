@@ -732,8 +732,9 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
      !        lDualNEq,lVaporOut
       double precision TPrint
       real(4) ParD(11,NMat), Par(10)
-      real(8) c1, c2
+      real(8) c1, c2 qLT
 
+      qLT = 0
       fRE=1.
       Grav=CosAlf
       xS=xSurf+Radius
@@ -766,8 +767,10 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
           if(lCentrif) Grav=CosAlf*(Radius+abs((x(2)+x(1))/2.))
           dx=x(2)-x(1)
           vi=-(Con(1)+Con(2))/2.*((hNew(2)-hNew(1))/dx+Grav*fRE)
-          if(lWTDep)
-     !    vi =vi-(ConLT(1)+ConLT(2))/2.*(Temp(2)-Temp(1))/dx
+          if(lWTDep) then
+            qLT = -(ConLT(1)+ConLT(2))/2.*(Temp(2)-Temp(1))/dx
+            vi =vi + qLT
+          end if
           vVi=0.
           if(lVapor) then
             vVii=-(ConVh(1)+ConVh(2))/2.*(hNew(2)-hNew(1))/dx
@@ -782,7 +785,10 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
           if(lCentrif) Grav=CosAlf*(Radius+abs((x(N)+x(N1))/2.))
           vi=-(Con(N)+Con(N1))/2.*((hNew(N)-hNew(N1))/dx+Grav*fRE)-
      !        (ThN(N)-ThOldT)*fRE*dx/2./dt-Sink(N)*dx/2.
-          if(lWTDep) vi=vi-(ConLT(N)+ConLT(N1))/2.*(Temp(N)-Temp(N1))/dx
+          if(lWTDep) then
+            qLT = -(ConLT(N)+ConLT(N1))/2.*(Temp(N)-Temp(N1))/dx
+            vi=vi + qLT
+          end if
           vVi=0.
           if(lVapor) then
             vVii=-(ConVh(N)+ConVh(N1))/2.*(hNew(N)-hNew(N1))/dx
@@ -802,7 +808,8 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
           if(lWTDep) then
             vAT =-(ConLT(i)+ConLT(i+1))/2.*(Temp(i+1)-Temp(i))/dxA
             vBT =-(ConLT(i)+ConLT(i-1))/2.*(Temp(i)-Temp(i-1))/dxB
-            vi  =vi+(vAT*dxA+vBT*dxB)/(dxA+dxB)
+            qLT = (vAT*dxA+vBT*dxB)/(dxA+dxB)
+            vi  =vi + qLT
           end if
           vVi=0.
           if(lVapor) then
@@ -823,9 +830,11 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
           c2 = FKcap( 0, hnew(i), Par )
           c1 = c2/c1; c2 = 1.0-c1
         end if
-        if(lVaporOut.and.lVapor) write(45,140,err=901) N-i+1,x(i)-xS,
+        if(lVaporOut.and.lVapor) then
+          write(45,140,err=901) N-i+1,x(i)-xS,
      !    Con(i),ConLT(i),ConVh(i),ConVT(i),vi,vVi,vi+vVi,vVii,vVTi, 
-     1    vi*c1,vi*c2
+     1    vi*c1,vi*c2, vi-qLT, qLT
+        end if
         if(hNew(i).gt.-9.9e+05) then
           if(.not.lBact) then
             if(iDualPor.eq.0) then
@@ -927,17 +936,17 @@ c              ThGj=amax1(0.,ths(Mj)-ThWj+thSIm(Mj)-ThImobj)
 116   format(
      !' Node    Depth        Con        ConLT        ConVh        ConVT 
      !      vLiquid       vVapor       vTotal       vVapIso     vVapTerm
-     1       vCap        vFilm
+     1       vCap        vFilm         vLH          vLT
      !'/
      !'          [L]        [L/T]     [L2/K/T]       [L/T]      [L2/K/T]
      !       [L/T]         [L/T]        [L/T]        [L/T]        [L/T]
-     !        [L/T]       [L/T]'
+     !        [L/T]       [L/T]        [L/T]        [L/T]'
      !/)
 120   format(i4,1x,f10.4,1x,f11.3,1x,f6.4,1x,4e12.4,i8,1x,e11.3,f8.2,
      !       30e12.4)
 130   format(i4,1x,f10.4,1x,e11.4,1x,f6.4,1x,4e12.4,i8,2x,f10.3,f8.2,
      !       30e12.4)
-140   format(i4,1x,f10.4,1x,11e13.5)
+140   format(i4,1x,f10.4,1x,*(e13.5))
       end
 
 ***********************************************************************
