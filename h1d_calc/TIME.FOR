@@ -475,7 +475,7 @@ c      if(tPeriod.gt.0.) tTopA=tTop+Ampl*sin(2.*PI*sngl(t)/tPeriod-7.*PI/12.)
       raa=0.
       rc=60.
       SCF=0.
-
+      rns=0; rnl=0
 *     Conversion to mm/d from L/T
       rConv=0.001*xConv
       TTConv=24.*60.*60.*tConv
